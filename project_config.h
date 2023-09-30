@@ -1,0 +1,9 @@
+#ifndef __PROJECT_CONFIG_H__
+#define __PROJECT_CONFIG_H__
+
+#define LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S (30) // 30 Seconds
+#define GNSS_DATA_UPDATE_INTERVAL_S (24*60*60) // 1 Day
+
+#define LORA_SPACE_DELAY_BETWEEN_PACKET_S (15) // 15 Seconds
+
+#endif /* __PROJECT_CONFIG_H__ */
