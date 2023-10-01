@@ -76,8 +76,7 @@ void log(char * msg)
 
 void gpio_init(void)
 {
-#warning No implement yet
-
+  // LED
   pinMode(LED_PIN, OUTPUT);
   led_off();
 }
