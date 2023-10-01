@@ -49,7 +49,16 @@ void serial_init(void);
  * 
  * @param msg Your message to print
  */
-void log(char * msg);
+#if defined(SERIAL_LOG_ENABLE)
+#define log( ... ) { \
+  char log_buffer[128]; \
+  memset(log_buffer, 0, 128); \
+  snprintf(log_buffer, 128, __VA_ARGS__); \
+  Serial.print(log_buffer); \
+ }
+ #else
+ log( ... )
+ #endif
 
 /*********** Others ***********/
 void gpio_init(void);

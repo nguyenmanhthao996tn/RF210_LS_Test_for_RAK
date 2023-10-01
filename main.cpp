@@ -46,7 +46,7 @@ void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t 
 
   SerialGPS.flush();
 
-  // Todo: Do the reading
+  // TODO: Do the reading
   *gnss_latitude = 0;
   *gnss_longtitude = 0;
   *gnss_time = 0;
@@ -92,13 +92,6 @@ void serial_init(void)
   Serial.begin(115200);
   while (!Serial)
     ;
-#endif
-}
-
-void log(char *msg)
-{
-#if defined(SERIAL_LOG_ENABLE)
-  Serial.print(msg);
 #endif
 }
 
