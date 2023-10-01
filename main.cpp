@@ -1,6 +1,33 @@
 #include "main.h"
 
 HardwareSerial SerialGPS(USART1);
+STM32RTC &rtc = STM32RTC::getInstance();
+
+char nmeaBuffer[100];
+MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
+
+rfthings_sx126x subghz_inst;
+extern uint8_t nwkS_key_terrestrial[];
+extern uint8_t appS_key_terrestrial[];
+extern uint8_t dev_addr_terrestrial[];
+extern uint8_t nwkS_key_space[];
+extern uint8_t appS_key_space[];
+extern uint8_t dev_addr_space[];
+
+static unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int sec)
+{
+  const short days_since_beginning_of_year[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+  int leap_years = ((year - 1) - 1968) / 4 - ((year - 1) - 1900) / 100 + ((year - 1) - 1600) / 400;
+  long days_since_1970 = (year - 1970) * 365 + leap_years + days_since_beginning_of_year[month - 1] + day - 1;
+  if ((month > 2) && (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)))
+    days_since_1970 += 1; /* +leap day, if year is a leap year */
+  return sec + 60 * (min + 60 * (hour + 24 * days_since_1970));
+}
+
+void system_init(void)
+{
+  rtc.begin();
+}
 
 void system_sleep(uint32_t sleep_duration_s)
 {
@@ -39,17 +66,42 @@ void gnss_init(void)
 void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t *gnss_time)
 {
 #if !defined(GPS_MOCK_COORDINATE_ENABLE) // Normal operation
-#error No implement yet
+#warning Need testing to verify all functionalities
   digitalWrite(GPS_ENABLE_PIN, HIGH);
 
-  delay(500);
+  delay(1000);
 
   SerialGPS.flush();
+  nmea.clear();
 
-  // TODO: Do the reading
-  *gnss_latitude = 0;
-  *gnss_longtitude = 0;
-  *gnss_time = 0;
+  char received_char;
+  uint32_t last_blink = millis();
+  for (;;)
+  {
+    // Get the character from GPS Serial & process it
+    if (SerialGPS.available())
+    {
+      received_char = SerialGPS.read();
+      nmea.process(received_char);
+    }
+
+    // Check read exit condition
+    if (nmea.isValid() && (nmea.getNumSatellites() > 4))
+    {
+      break;
+    }
+
+    // Blink LED every second
+    if (millis() - last_blink > 1000)
+    {
+      last_blink = millis();
+      led_blink(1);
+    }
+  }
+
+  *gnss_latitude = nmea.getLatitude();
+  *gnss_longtitude = nmea.getLongitude();
+  *gnss_time = unixTimestamp(nmea.getYear(), nmea.getMonth(), nmea.getDay(), nmea.getHour(), nmea.getMinute(), nmea.getSecond());
 
   digitalWrite(GPS_ENABLE_PIN, HIGH);
 #else // Mock GPS coordinates
@@ -57,21 +109,150 @@ void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t 
   *gnss_longtitude = GPS_MOCK_LON_VALUE;
   *gnss_time = GPS_MOCK_TIME_VALUE;
 #endif
+
+  // Update time to RTC module
+  rtc.setEpoch((time_t)(*gnss_time));
+  // rtc.setTime(21, 32, 05); // Hour, Min, Sec
+  // rtc.setDate(01, 10, 23); // Day, Month, Year (actual year - 2000)
+}
+
+static void sw_ctrl_set_mode(bool mode_tx)
+{
+  if (mode_tx)
+  {
+    digitalWrite(SW_VCTL1_PIN, LOW);
+    digitalWrite(SW_VCTL2_PIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(SW_VCTL1_PIN, HIGH);
+    digitalWrite(SW_VCTL2_PIN, LOW);
+  }
+}
+
+static void sw_ctrl_set_mode_tx(void)
+{
+  sw_ctrl_set_mode(true);
+}
+
+static void sw_ctrl_set_mode_rx(void)
+{
+  sw_ctrl_set_mode(false);
 }
 
 void lora_init(void)
 {
-#warning No implement yet
+  rft_status_t status;
+
+  pinMode(SW_VCTL1_PIN, OUTPUT);
+  pinMode(SW_VCTL2_PIN, OUTPUT);
+
+  status = subghz_inst.init(RFT_REGION_EU863_870);
+  if (status != RFT_STATUS_OK)
+  {
+    return;
+  }
 }
 
-void lora_send_terrestrial_status_uplink(void)
+uint8_t build_payload(uint8_t *buffer, bool send_to_space, uint32_t gps_lattitude, uint32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update)
 {
-#warning No implement yet
+  if (buffer == NULL)
+    return 0;
+
+  /****** What should we send? ******/
+  // Packet type: 1 = send to space, 0 = send to terrestrial gateway
+  buffer[0] = send_to_space ? 1 : 0;
+
+  // Packet build time
+  uint32_t now = rtc.getEpoch();
+  buffer[1] = (now >> 24) & 0xFF;
+  buffer[2] = (now >> 16) & 0xFF;
+  buffer[3] = (now >> 8) & 0xFF;
+  buffer[4] = now & 0xFF;
+
+  // Last coordinates
+  buffer[5] = (gps_lattitude >> 24) & 0xFF;
+  buffer[6] = (gps_lattitude >> 16) & 0xFF;
+  buffer[7] = (gps_lattitude >> 8) & 0xFF;
+  buffer[8] = gps_lattitude & 0xFF;
+  buffer[9] = (gps_lattitude >> 24) & 0xFF;
+  buffer[10] = (gps_lattitude >> 16) & 0xFF;
+  buffer[11] = (gps_lattitude >> 8) & 0xFF;
+  buffer[12] = gps_lattitude & 0xFF;
+
+  // Next satellite pass start & duration
+  buffer[13] = (next_pass_start >> 24) & 0xFF;
+  buffer[14] = (next_pass_start >> 16) & 0xFF;
+  buffer[15] = (next_pass_start >> 8) & 0xFF;
+  buffer[16] = next_pass_start & 0xFF;
+
+  buffer[17] = (next_pass_duration >> 24) & 0xFF;
+  buffer[18] = (next_pass_duration >> 16) & 0xFF;
+  buffer[19] = (next_pass_duration >> 8) & 0xFF;
+  buffer[20] = next_pass_duration & 0xFF;
+
+  // Next GPS Update timestamp
+  buffer[21] = (next_gps_update >> 24) & 0xFF;
+  buffer[22] = (next_gps_update >> 16) & 0xFF;
+  buffer[23] = (next_gps_update >> 8) & 0xFF;
+  buffer[24] = next_gps_update & 0xFF;
+
+  return 25;
 }
 
-void lora_send_space_uplink(void)
+void lora_send_terrestrial_status_uplink(uint8_t *payload, uint8_t payload_len)
 {
-#warning No implement yet
+  // Set parameters
+  // LoRaWAN parameters
+  subghz_inst.set_lorawan_activation_type(RFT_LORAWAN_ACTIVATION_TYPE_ABP);
+  subghz_inst.set_application_session_key(appS_key_terrestrial);
+  subghz_inst.set_network_session_key(nwkS_key_terrestrial);
+  subghz_inst.set_device_address(dev_addr_terrestrial);
+
+  subghz_inst.set_tx_port(1);
+  subghz_inst.set_rx1_delay(1000);
+
+  // LoRa parameters
+  subghz_inst.set_tx_power(22);
+  subghz_inst.set_frequency(868100000);
+  subghz_inst.set_spreading_factor(RFT_LORA_SPREADING_FACTOR_9);
+  subghz_inst.set_bandwidth(RFT_LORA_BANDWIDTH_125KHZ);
+  subghz_inst.set_coding_rate(RFT_LORA_CODING_RATE_4_6);
+  subghz_inst.set_syncword(RFT_LORA_SYNCWORD_PUBLIC);
+
+  // Send packet
+  rft_status_t status = subghz_inst.send_uplink((byte *)payload, payload_len, sw_ctrl_set_mode_tx, sw_ctrl_set_mode_rx);
+  if (status != RFT_STATUS_OK)
+  {
+    return;
+  }
+}
+
+void lora_send_space_uplink(uint8_t *payload, uint8_t payload_len)
+{
+  // Set parameters
+  // LoRaWAN parameters
+  subghz_inst.set_lorawan_activation_type(RFT_LORAWAN_ACTIVATION_TYPE_ABP);
+  subghz_inst.set_application_session_key(appS_key_space);
+  subghz_inst.set_network_session_key(nwkS_key_space);
+  subghz_inst.set_device_address(dev_addr_space);
+
+  // Config LR-FHSS parameter
+  subghz_inst.set_lrfhss_codingRate(RFT_LRFHSS_CODING_RATE_1_3);
+  subghz_inst.set_lrfhss_bandwidth(RFT_LRFHSS_BANDWIDTH_136_7_KHZ);
+  subghz_inst.set_lrfhss_grid(RFT_LRFHSS_GRID_3_9_KHZ);
+  subghz_inst.set_lrfhss_hopping(true);
+  subghz_inst.set_lrfhss_nbSync(4);
+  subghz_inst.set_lrfhss_frequency(868200000);
+  subghz_inst.set_lrfhss_power(22);
+  subghz_inst.set_lrfhss_syncword(0x2C0F7995);
+
+  // Send packet
+  rft_status_t status = subghz_inst.send_lorawan_over_lrfhss((byte *)payload, payload_len, sw_ctrl_set_mode_tx);
+  if (status != RFT_STATUS_OK)
+  {
+    return;
+  }
 }
 
 void sat_predictor_init(void)

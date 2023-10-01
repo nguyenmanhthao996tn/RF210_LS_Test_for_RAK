@@ -3,9 +3,13 @@
 
 #include "project_config.h"
 #include <Arduino.h>
-#include <stdarg.h>
+#include <STM32RTC.h>
+#include <RFThings.h>
+#include <radio/sx126x/rfthings_sx126x.h>
+#include <MicroNMEA.h>
 
 /*********** Board sleep ***********/
+void system_init(void);
 void system_sleep(uint32_t sleep_duration_s);
 
 /*********** GNSS ***********/
@@ -16,7 +20,7 @@ void system_sleep(uint32_t sleep_duration_s);
 void gnss_init(void);
 
 /**
- * @brief (Blocking) Update the latest GNSS data. Divide returned Longtitude & Latitude to 1e7 to get actual values.
+ * @brief (Blocking) Update the latest GNSS data. Divide returned Longtitude & Latitude to 1e6 to get actual values.
  * 
  * @param gnss_latitude Pointer to Latitude variable to be updated
  * @param gnss_longtitude Pointer to Longtitude variable to be updated
@@ -26,8 +30,9 @@ void gnss_get_data(uint32_t* gnss_latitude, uint32_t* gnss_longtitude, uint32_t*
 
 /*********** LoRa ***********/
 void lora_init(void);
-void lora_send_terrestrial_status_uplink(void);
-void lora_send_space_uplink(void);
+uint8_t build_payload(uint8_t* buffer, bool send_to_space, uint32_t gps_lattitude, uint32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update);
+void lora_send_terrestrial_status_uplink(uint8_t* payload, uint8_t payload_len);
+void lora_send_space_uplink(uint8_t* payload, uint8_t payload_len);
 
 /*********** Satellite pass predictor ***********/
 void sat_predictor_init(void);
