@@ -23,6 +23,13 @@ void setup(void)
   lora_init();
   gnss_init();
 
+  // Get GPS Data
+  gnss_get_data(&gnss_latitude, &gnss_longtitude, &gnss_time);
+
+  // Send stutus packet
+  led_blink(2);
+  lora_send_terrestrial_status_uplink();
+
   // Turn on the LED 1 second to indicate initialization DONE
   led_on();
   delay(1000);
