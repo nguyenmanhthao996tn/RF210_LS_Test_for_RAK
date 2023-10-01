@@ -10,8 +10,10 @@ void system_sleep(uint32_t sleep_duration_s)
 void gnss_init(void)
 {
   pinMode(GPS_ENABLE_PIN, OUTPUT);
-  digitalWrite(GPS_ENABLE_PIN, HIGH);
   pinMode(GPS_V_BACKUP_PIN, OUTPUT);
+
+#if !defined(GPS_MOCK_COORDINATE_ENABLE) // Normal operation
+  digitalWrite(GPS_ENABLE_PIN, HIGH);
   digitalWrite(GPS_V_BACKUP_PIN, HIGH);
 
   delay(500);
@@ -20,15 +22,41 @@ void gnss_init(void)
   SerialGPS.setRx(GPS_RX_PIN);
   SerialGPS.begin(9600, SERIAL_8N1);
 
-  while (!SerialGPS);
+  while (!SerialGPS)
+    ;
 
-  while (!SerialGPS.available());
+  while (!SerialGPS.available())
+    ;
+
+  digitalWrite(GPS_ENABLE_PIN, LOW);
+
+  SerialGPS.flush();
+#else // Mock GPS coordinates
+  // Nothing to do here
+#endif
 }
 
 void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t *gnss_time)
 {
-#warning No implement yet
+#if !defined(GPS_MOCK_COORDINATE_ENABLE) // Normal operation
+#error No implement yet
+  digitalWrite(GPS_ENABLE_PIN, HIGH);
+
+  delay(500);
+
   SerialGPS.flush();
+
+  // Todo: Do the reading
+  *gnss_latitude = 0;
+  *gnss_longtitude = 0;
+  *gnss_time = 0;
+
+  digitalWrite(GPS_ENABLE_PIN, HIGH);
+#else // Mock GPS coordinates
+  *gnss_latitude = GPS_MOCK_LAT_VALUE;
+  *gnss_longtitude = GPS_MOCK_LON_VALUE;
+  *gnss_time = GPS_MOCK_TIME_VALUE;
+#endif
 }
 
 void lora_init(void)
@@ -67,7 +95,7 @@ void serial_init(void)
 #endif
 }
 
-void log(char * msg)
+void log(char *msg)
 {
 #if defined(SERIAL_LOG_ENABLE)
   Serial.print(msg);

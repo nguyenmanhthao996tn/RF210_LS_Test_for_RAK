@@ -23,8 +23,12 @@ void setup(void)
   lora_init();
   gnss_init();
 
+  log("RF210_LS_Test_for_RAK\n");
+  log("Initialization DONE\n");
+
   // Get GPS Data
   gnss_get_data(&gnss_latitude, &gnss_longtitude, &gnss_time);
+  log("Get GPS Data DONE\n");
 
   // Send stutus packet
   led_blink(2);
@@ -36,6 +40,9 @@ void setup(void)
   led_off();
 
   current_timestamp = millis();
+
+  // DEBUG
+  while (1);
 }
 
 void loop(void)
