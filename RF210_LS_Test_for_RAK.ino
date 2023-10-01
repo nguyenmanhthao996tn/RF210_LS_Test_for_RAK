@@ -29,6 +29,7 @@ void setup(void)
   // Get GPS Data
   gnss_get_data(&gnss_latitude, &gnss_longtitude, &gnss_time);
   log("Get GPS Data DONE\n");
+  log("Lat: %d\nLon: %d\nGPS Time: %d\n", gnss_latitude, gnss_longtitude, gnss_time);
 
   // Send stutus packet
   led_blink(2);
