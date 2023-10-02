@@ -8,6 +8,8 @@
 #define LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S (30) // 30 Seconds
 #define GNSS_DATA_UPDATE_INTERVAL_S (24 * 60 * 60)     // 1 Day
 
+#define MIN_PASS_ELAVATION 30 // Send to satellite pass with elavation > 30 degrees
+
 #define LORA_SPACE_DELAY_BETWEEN_PACKET_S (15) // 15 Seconds
 
 /* LoRa Terrestrial Configuration */
@@ -38,6 +40,6 @@ static uint8_t dev_addr_space[] = {0x26, 0x0B, 0x87, 0x00};
 #define GPS_MOCK_COORDINATE_ENABLE
 #define GPS_MOCK_LAT_VALUE 436152087ul
 #define GPS_MOCK_LON_VALUE 70686221ul
-#define GPS_MOCK_TIME_VALUE 1696205970ul // Monday, 2 October 2023 00:19:30 GMT
+#define GPS_MOCK_TIME_VALUE 1696209651ul // Monday, 2 October 2023 00:19:30 GMT
 
 #endif /* __PROJECT_CONFIG_H__ */

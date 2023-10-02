@@ -38,7 +38,7 @@ void setup(void)
   log("\tNext GPS update: %d\n", gps_update_timestamp);
 
   // Calculate the next pass
-  sat_predictor_get_next_pass(&lora_space_pass_start_timestamp, &lora_space_pass_duration_s);
+  sat_predictor_get_next_pass(&lora_space_pass_start_timestamp, &lora_space_pass_duration_s, gnss_latitude, gnss_longtitude);
   event_timestamp_calibration(&gps_update_timestamp, &lora_terrestrial_status_uplink_timestamp, lora_space_pass_start_timestamp, lora_space_pass_duration_s);
   log("Predict the next satellite pass DONE\n");
   log("\tPass start: %d\n\tPass duration:%d\n", lora_space_pass_start_timestamp, lora_space_pass_duration_s);
@@ -80,7 +80,7 @@ void loop(void)
     }
 
     // Calculate the next pass
-    sat_predictor_get_next_pass(&lora_space_pass_start_timestamp, &lora_space_pass_duration_s);
+    sat_predictor_get_next_pass(&lora_space_pass_start_timestamp, &lora_space_pass_duration_s, gnss_latitude, gnss_longtitude);
   }
 
   if (current_timestamp > gps_update_timestamp)

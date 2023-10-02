@@ -6,7 +6,9 @@
 #include <STM32RTC.h>
 #include <RFThings.h>
 #include <radio/sx126x/rfthings_sx126x.h>
-#include <MicroNMEA.h>
+#include "tle.h"
+#include <Sgp4.h>      // https://github.com/Hopperpop/Sgp4-Library
+#include <MicroNMEA.h> // http://librarymanager/All#MicroNMEA
 
 /*********** Board sleep ***********/
 void system_init(void);
@@ -36,7 +38,7 @@ void lora_send_space_uplink(uint8_t* payload, uint8_t payload_len);
 
 /*********** Satellite pass predictor ***********/
 void sat_predictor_init(void);
-void sat_predictor_get_next_pass(uint32_t* pass_start_timestamp, uint32_t* pass_duration_s);
+void sat_predictor_get_next_pass(uint32_t* pass_start_timestamp, uint32_t* pass_duration_s, uint32_t gnss_latitude, uint32_t gnss_longtitude);
 
 /*********** Serial ***********/
 

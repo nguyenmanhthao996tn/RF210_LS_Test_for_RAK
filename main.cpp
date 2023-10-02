@@ -6,6 +6,9 @@ STM32RTC &rtc = STM32RTC::getInstance();
 char nmeaBuffer[100];
 MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 
+// Satellite predictor
+Sgp4 predictor;
+
 rfthings_sx126x subghz_inst;
 extern uint8_t nwkS_key_terrestrial[];
 extern uint8_t appS_key_terrestrial[];
@@ -13,6 +16,10 @@ extern uint8_t dev_addr_terrestrial[];
 extern uint8_t nwkS_key_space[];
 extern uint8_t appS_key_space[];
 extern uint8_t dev_addr_space[];
+
+extern char satname[];
+extern char tle_line1[];
+extern char tle_line2[];
 
 static unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int sec)
 {
@@ -260,9 +267,53 @@ void sat_predictor_init(void)
 #warning No implement yet
 }
 
-void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_duration_s)
+void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_duration_s, uint32_t gnss_latitude, uint32_t gnss_longtitude)
 {
-#warning No implement yet
+  double lat = (double)(gnss_latitude / 1.0e6);
+  double lon = (double)(gnss_longtitude / 1.0e6);
+  double alt = 0;
+  predictor.site(lat, lon, alt);
+
+  predictor.init(satname, tle_line1, tle_line2);
+
+  passinfo overpass;                            // structure to store overpass info
+  predictor.initpredpoint((unsigned long)rtc.getEpoch(), 0.0); // finds the startpoint
+
+  bool good_pass_found = false;
+  bool predict_result;
+  for (uint8_t i = 0; i < 15; i++) // Search for the next 15 pass for a good max elavtion
+  {
+    predict_result = predictor.nextpass(&overpass, 20); // search for the next overpass, if there are more than 20 maximums below the horizon it returns false
+    if (predict_result && (overpass.maxelevation > MIN_PASS_ELAVATION))
+    {
+      good_pass_found = true;
+      break; // Stop the prediction iteration
+    }
+    else
+    {
+    }
+  }
+
+  log("Predict next satellite pass\n");
+  if (good_pass_found)
+  {
+    uint32_t next_satellite_pass_start = getUnixFromJulian(overpass.jdstart);
+    uint32_t next_satellite_pass_stop = getUnixFromJulian(overpass.jdstop);
+
+    // Add 5 minutes margin
+    *pass_start_timestamp = next_satellite_pass_start - (5 * 60);
+    *pass_duration_s = (next_satellite_pass_stop - next_satellite_pass_start) + (10 * 60);
+
+    log("A good pass found at");
+    log("\n\tStart: %ld\n\tStop: %ld\n\tMax. Elavation:  %f\n", next_satellite_pass_start, next_satellite_pass_stop, overpass.maxelevation);
+  }
+  else
+  {
+    *pass_start_timestamp = 0;
+    *pass_duration_s = 0;
+
+    log("Pass NOT found\n");
+  }
 }
 
 void serial_init(void)
