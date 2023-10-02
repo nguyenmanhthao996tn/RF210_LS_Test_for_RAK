@@ -67,6 +67,30 @@ void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t 
 #endif
 }
 
+static void sw_ctrl_set_mode(bool mode_tx)
+{
+  if (mode_tx)
+  {
+    digitalWrite(SW_VCTL1_PIN, LOW);
+    digitalWrite(SW_VCTL2_PIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(SW_VCTL1_PIN, HIGH);
+    digitalWrite(SW_VCTL2_PIN, LOW);
+  }
+}
+
+static void sw_ctrl_set_mode_tx(void)
+{
+  sw_ctrl_set_mode(true);
+}
+
+static void sw_ctrl_set_mode_rx(void)
+{
+  sw_ctrl_set_mode(false);
+}
+
 void lora_init(void)
 {
   rft_status_t status;
