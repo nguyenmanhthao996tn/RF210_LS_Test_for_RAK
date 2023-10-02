@@ -14,7 +14,7 @@ int32_t gnss_latitude = 0;
 int32_t gnss_longtitude = 0;
 uint32_t gnss_time = 0;
 
-extern STM32RTC &rtc;
+STM32RTC &rtc = STM32RTC::getInstance();
 
 /****** FUNCTIONS: Main ******/
 void setup(void)
@@ -30,7 +30,7 @@ void setup(void)
 
   // Get GPS Data
   gnss_get_data(&gnss_latitude, &gnss_longtitude, &gnss_time);
-  gps_update_timestamp = rtc.getEpoch() + GNSS_DATA_UPDATE_INTERVAL_S;
+  gps_update_timestamp = (unsigned long)rtc.getEpoch() + GNSS_DATA_UPDATE_INTERVAL_S;
   log("Get GPS Data DONE\n");
   log("\tLat: %d\n\tLon: %d\n\tGPS Time: %u\n", gnss_latitude, gnss_longtitude, gnss_time);
   log("\tLong date format: %02d/%02d/%02d ", rtc.getDay(), rtc.getMonth(), rtc.getYear());
@@ -39,7 +39,6 @@ void setup(void)
 
   // Calculate the next pass
   sat_predictor_get_next_pass(&lora_space_pass_start_timestamp, &lora_space_pass_duration_s, gnss_latitude, gnss_longtitude);
-  event_timestamp_calibration(&gps_update_timestamp, &lora_terrestrial_status_uplink_timestamp, lora_space_pass_start_timestamp, lora_space_pass_duration_s);
   log("Predict the next satellite pass DONE\n");
   log("\tPass start: %u\n\tPass duration: %u\n", lora_space_pass_start_timestamp, lora_space_pass_duration_s);
 
@@ -49,21 +48,20 @@ void setup(void)
   uint8_t payload_len = build_payload(payload, false, gnss_latitude, gnss_longtitude, lora_space_pass_start_timestamp, lora_space_pass_duration_s, gps_update_timestamp);
   lora_send_terrestrial_status_uplink(payload, payload_len);
   lora_send_terrestrial_status_uplink(payload, payload_len);
+  lora_terrestrial_status_uplink_timestamp = (unsigned long)rtc.getEpoch() + LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S;
+  event_timestamp_calibration(&gps_update_timestamp, &lora_terrestrial_status_uplink_timestamp, lora_space_pass_start_timestamp, lora_space_pass_duration_s);
   log("Send terrestrial status uplink DONE\n");
 
   // Turn on the LED 1 second to indicate initialization DONE
   led_on();
   delay(1000);
   led_off();
-
-  current_timestamp = millis();
-
-  while (1)
-    ; // DEBUG: We stop the debugging here
 }
 
 void loop(void)
 {
+  current_timestamp = (unsigned long)rtc.getEpoch();
+
   if (current_timestamp > lora_space_pass_start_timestamp)
   {
     // Send uplink while satellite pass still in it's duration

@@ -1,7 +1,7 @@
 #include "main.h"
 
 HardwareSerial SerialGPS(USART1);
-STM32RTC &rtc = STM32RTC::getInstance();
+STM32RTC &__rtc = STM32RTC::getInstance();
 
 char nmeaBuffer[100];
 MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
@@ -31,19 +31,55 @@ static unsigned long unixTimestamp(int year, int month, int day, int hour, int m
   return sec + 60 * (min + 60 * (hour + 24 * days_since_1970));
 }
 
-void system_init(void)
+static void alarmMatch(void *params)
 {
-  rtc.begin();
+  // Do nothing here
 }
 
-void system_sleep(uint32_t sleep_duration_s)
+void system_init(void)
 {
-#warning No implement yet
-  log_debug("system_sleep(%u)\n", sleep_duration_s);
+  __rtc.begin();
+
+  LowPower.begin();
+  LowPower.enableWakeupFrom(&__rtc, alarmMatch, NULL);
+}
+
+void system_sleep(uint32_t wakeup_epoch)
+{
+  log_debug("system_sleep(%u)\n", wakeup_epoch);
+  int32_t sleep_duration_s = wakeup_epoch - (unsigned long)__rtc.getEpoch();
 
 #if !defined(SYSTEM_SLEEP_DEBUG)
+
+  if (sleep_duration_s > 2)
+  {
+    log_debug("LowPower.deepSleep is used, see you in %d seconds ...", sleep_duration_s);
+    __rtc.setAlarmEpoch(wakeup_epoch);
+    delay(10);
+    LowPower.deepSleep();
+    delay(10);
+    log_debug("WAKE UP!\n");
+  }
+  else if (sleep_duration_s > 0)
+  {
+    log_debug("Sleep by delay for %d seconds\n");
+    delay(sleep_duration_s * 1000);
+  }
+  else
+  {
+    log_debug("Invalid sleep duration\n");
+  }
+
 #else
-  delay(sleep_duration_s * 1000);
+  if (sleep_duration_s > 0)
+  {
+    log_debug("Sleep by delay for %d seconds\n");
+    delay(sleep_duration_s * 1000);
+  }
+  else
+  {
+    log_debug("Invalid sleep duration\n");
+  }
 #endif
 }
 
@@ -126,9 +162,9 @@ void gnss_get_data(int32_t *gnss_latitude, int32_t *gnss_longtitude, uint32_t *g
 #endif
 
   // Update time to RTC module
-  rtc.setEpoch((time_t)(*gnss_time));
-  // rtc.setTime(21, 32, 05); // Hour, Min, Sec
-  // rtc.setDate(01, 10, 23); // Day, Month, Year (actual year - 2000)
+  __rtc.setEpoch((time_t)(*gnss_time));
+  // __rtc.setTime(21, 32, 05); // Hour, Min, Sec
+  // __rtc.setDate(01, 10, 23); // Day, Month, Year (actual year - 2000)
 }
 
 static void sw_ctrl_set_mode(bool mode_tx)
@@ -174,7 +210,7 @@ void lora_init(void)
 
 uint8_t build_payload(uint8_t *buffer, bool send_to_space, int32_t gps_lattitude, int32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update)
 {
-  log_debug("build_payload(%x, %s, %d, %d, %u, %u, %u)", buffer, (send_to_space ? "true" : "false"), gps_lattitude, gps_longtitude, next_pass_start, next_pass_duration, next_gps_update);
+  log_debug("build_payload(%x, %s, %d, %d, %u, %u, %u)\n", buffer, (send_to_space ? "true" : "false"), gps_lattitude, gps_longtitude, next_pass_start, next_pass_duration, next_gps_update);
 
   if (buffer == NULL)
     return 0;
@@ -184,7 +220,7 @@ uint8_t build_payload(uint8_t *buffer, bool send_to_space, int32_t gps_lattitude
   buffer[0] = send_to_space ? 1 : 0;
 
   // Packet build time
-  uint32_t now = rtc.getEpoch();
+  uint32_t now = (unsigned long)__rtc.getEpoch() & 0xffffffff;
   buffer[1] = (now >> 24) & 0xFF;
   buffer[2] = (now >> 16) & 0xFF;
   buffer[3] = (now >> 8) & 0xFF;
@@ -216,13 +252,6 @@ uint8_t build_payload(uint8_t *buffer, bool send_to_space, int32_t gps_lattitude
   buffer[22] = (next_gps_update >> 16) & 0xFF;
   buffer[23] = (next_gps_update >> 8) & 0xFF;
   buffer[24] = next_gps_update & 0xFF;
-
-  log_debug("Payload: ");
-  for (uint8_t i = 0; i < 25; i++)
-  {
-    log_debug(" 0x%.2x", buffer[i]);
-  }
-  log_debug("\n");
 
   return 25;
 }
@@ -306,8 +335,8 @@ void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_
 
   predictor.init(satname, tle_line1, tle_line2);
 
-  passinfo overpass;                                           // structure to store overpass info
-  predictor.initpredpoint((unsigned long)rtc.getEpoch(), 0.0); // finds the startpoint
+  passinfo overpass;                                             // structure to store overpass info
+  predictor.initpredpoint((unsigned long)__rtc.getEpoch(), 0.0); // finds the startpoint
 
   bool good_pass_found = false;
   bool predict_result;
@@ -398,25 +427,60 @@ void event_timestamp_calibration(uint32_t *gps_update_timestamp, uint32_t *lora_
 
   if ((start < *gps_update_timestamp) && (*gps_update_timestamp < stop))
   {
+    uint32_t old_value = *gps_update_timestamp;
     *gps_update_timestamp = stop + (random(5, 15) * 60); // Reschedule from 5 to 15 mins after a pass
+    log_debug("Guard satellite pass time violation detected! Reschedule gps_update_timestamp from %u to %u\n", old_value, *gps_update_timestamp);
   }
 
   if ((start < *lora_terrestrial_status_uplink_timestamp) && (*lora_terrestrial_status_uplink_timestamp < stop))
   {
+    uint32_t old_value = *gps_update_timestamp;
     *lora_terrestrial_status_uplink_timestamp = stop + (random(1, 5) * 60); // Reschedule from 1 to 5 mins after a pass
+    log_debug("Guard satellite pass time violation detected! Reschedule lora_terrestrial_status_uplink_timestamp from %u to %u\n", old_value, *gps_update_timestamp);
   }
 }
 
-uint32_t smallest(uint32_t val1, uint32_t val2, uint32_t val3)
+uint32_t smallest(uint32_t gps_update_timestamp, uint32_t lora_terrestrial_status_uplink_timestamp, uint32_t lora_space_pass_start_timestamp)
 {
-  log_debug("smallest(%u, %u, %u)", val1, val2, val3);
+  log_debug("smallest(%u, %u, %u)\n", gps_update_timestamp, lora_terrestrial_status_uplink_timestamp, lora_space_pass_start_timestamp);
 
-  uint32_t smallest_value = val1;
+  uint8_t next_event_flag = 0;
+  uint32_t smallest_value = 0xffffffff;
 
-  if (val2 < smallest_value)
-    smallest_value = val2;
-  if (val3 < smallest_value)
-    smallest_value = val3;
+  if ((gps_update_timestamp != 0) && (gps_update_timestamp < smallest_value))
+  {
+    next_event_flag = 1;
+    smallest_value = gps_update_timestamp;
+  }
+  if ((lora_terrestrial_status_uplink_timestamp != 0) && (lora_terrestrial_status_uplink_timestamp < smallest_value))
+  {
+    next_event_flag = 2;
+    smallest_value = lora_terrestrial_status_uplink_timestamp;
+  }
+  if ((lora_space_pass_start_timestamp != 0) && (lora_space_pass_start_timestamp < smallest_value))
+  {
+    next_event_flag = 3;
+    smallest_value = lora_space_pass_start_timestamp;
+  }
+
+  switch (next_event_flag)
+  {
+  case 0:
+    log_debug("No next event, sleep forever!\n");
+    break;
+  case 1:
+    log_debug("Next wake up event is GPS UPDATE\n");
+    break;
+  case 2:
+    log_debug("Next wake up event is TERRESTRIAL LORA SENDING STATUS PACKET\n");
+    break;
+  case 3:
+    log_debug("Next wake up event is SPACE LORA SENDING TO SATELLITE\n");
+    break;
+  default:
+    log_debug("Unknown next event, error!\n");
+    break;
+  }
 
   return smallest_value;
 }
