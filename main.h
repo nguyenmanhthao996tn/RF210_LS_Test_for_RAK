@@ -28,17 +28,17 @@ void gnss_init(void);
  * @param gnss_longtitude Pointer to Longtitude variable to be updated
  * @param gnss_time Pointer to time variable to be updated
  */
-void gnss_get_data(uint32_t* gnss_latitude, uint32_t* gnss_longtitude, uint32_t* gnss_time);
+void gnss_get_data(int32_t* gnss_latitude, int32_t* gnss_longtitude, uint32_t* gnss_time);
 
 /*********** LoRa ***********/
 void lora_init(void);
-uint8_t build_payload(uint8_t* buffer, bool send_to_space, uint32_t gps_lattitude, uint32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update);
+uint8_t build_payload(uint8_t* buffer, bool send_to_space, int32_t gps_lattitude, int32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update);
 void lora_send_terrestrial_status_uplink(uint8_t* payload, uint8_t payload_len);
 void lora_send_space_uplink(uint8_t* payload, uint8_t payload_len);
 
 /*********** Satellite pass predictor ***********/
 void sat_predictor_init(void);
-void sat_predictor_get_next_pass(uint32_t* pass_start_timestamp, uint32_t* pass_duration_s, uint32_t gnss_latitude, uint32_t gnss_longtitude);
+void sat_predictor_get_next_pass(uint32_t* pass_start_timestamp, uint32_t* pass_duration_s, int32_t gnss_latitude, int32_t gnss_longtitude);
 
 /*********** Serial ***********/
 
@@ -58,9 +58,9 @@ void serial_init(void);
  */
 #if defined(SERIAL_LOG_ENABLE)
 #define log( ... ) { \
-  char log_buffer[128]; \
-  memset(log_buffer, 0, 128); \
-  snprintf(log_buffer, 128, __VA_ARGS__); \
+  char log_buffer[256]; \
+  memset(log_buffer, 0, 256); \
+  snprintf(log_buffer, 256, __VA_ARGS__); \
   Serial.print(log_buffer); \
  }
  #else
@@ -75,9 +75,9 @@ void serial_init(void);
  */
 #if defined(SERIAL_LOG_ENABLE) && defined(SERIAL_LOG_DEBUG_ENABLE)
 #define log_debug( ... ) { \
-  char log_buffer[128]; \
-  memset(log_buffer, 0, 128); \
-  snprintf(log_buffer, 128, __VA_ARGS__); \
+  char log_buffer[256]; \
+  memset(log_buffer, 0, 256); \
+  snprintf(log_buffer, 256, __VA_ARGS__); \
   Serial.print("[DEBUG] "); \
   Serial.print(log_buffer); \
  }

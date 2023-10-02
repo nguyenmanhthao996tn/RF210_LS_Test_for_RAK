@@ -76,7 +76,7 @@ void gnss_init(void)
 #endif
 }
 
-void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t *gnss_time)
+void gnss_get_data(int32_t *gnss_latitude, int32_t *gnss_longtitude, uint32_t *gnss_time)
 {
   log_debug("gnss_get_data(0x%x, 0x%x, 0x%x)\n", gnss_latitude, gnss_longtitude, gnss_time);
 
@@ -172,9 +172,9 @@ void lora_init(void)
   }
 }
 
-uint8_t build_payload(uint8_t *buffer, bool send_to_space, uint32_t gps_lattitude, uint32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update)
+uint8_t build_payload(uint8_t *buffer, bool send_to_space, int32_t gps_lattitude, int32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update)
 {
-  log_debug("build_payload(%x, %s, %u, %u, %u, %u, %u)", buffer, (send_to_space ? "true" : "false"), gps_lattitude, gps_longtitude, next_pass_start, next_pass_duration, next_gps_update);
+  log_debug("build_payload(%x, %s, %d, %d, %u, %u, %u)", buffer, (send_to_space ? "true" : "false"), gps_lattitude, gps_longtitude, next_pass_start, next_pass_duration, next_gps_update);
 
   if (buffer == NULL)
     return 0;
@@ -195,10 +195,10 @@ uint8_t build_payload(uint8_t *buffer, bool send_to_space, uint32_t gps_lattitud
   buffer[6] = (gps_lattitude >> 16) & 0xFF;
   buffer[7] = (gps_lattitude >> 8) & 0xFF;
   buffer[8] = gps_lattitude & 0xFF;
-  buffer[9] = (gps_lattitude >> 24) & 0xFF;
-  buffer[10] = (gps_lattitude >> 16) & 0xFF;
-  buffer[11] = (gps_lattitude >> 8) & 0xFF;
-  buffer[12] = gps_lattitude & 0xFF;
+  buffer[9] = (gps_longtitude >> 24) & 0xFF;
+  buffer[10] = (gps_longtitude >> 16) & 0xFF;
+  buffer[11] = (gps_longtitude >> 8) & 0xFF;
+  buffer[12] = gps_longtitude & 0xFF;
 
   // Next satellite pass start & duration
   buffer[13] = (next_pass_start >> 24) & 0xFF;
@@ -295,9 +295,9 @@ void sat_predictor_init(void)
   // Do nothing here
 }
 
-void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_duration_s, uint32_t gnss_latitude, uint32_t gnss_longtitude)
+void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_duration_s, int32_t gnss_latitude, int32_t gnss_longtitude)
 {
-  log_debug("sat_predictor_get_next_pass(%x, %x, %u, %u)\n", pass_start_timestamp, pass_duration_s, gnss_latitude, gnss_longtitude);
+  log_debug("sat_predictor_get_next_pass(%x, %x, %d, %d)\n", pass_start_timestamp, pass_duration_s, gnss_latitude, gnss_longtitude);
 
   double lat = (double)(gnss_latitude / 1.0e6);
   double lon = (double)(gnss_longtitude / 1.0e6);

@@ -46,4 +46,14 @@ static uint8_t dev_addr_space[] = {0x26, 0x0B, 0x87, 0x00};
 // #define SERIAL_LOG_DEBUG_ENABLE // Uncomment this for printing debug log. Caution: This is in effect only if SERIAL_LOG_ENABLE is available.
 #define SYSTEM_SLEEP_DEBUG // Uncomment this for using delay instead of sleep
 
+
+
+#if defined(SERIAL_LOG_DEBUG_ENABLE)
+#warning SERIAL_LOG_DEBUG_ENABLE is active, this should be deactive to save power for actual deployment of the terminal.
+#endif
+
+#if defined(SYSTEM_SLEEP_DEBUG)
+#warning SYSTEM_SLEEP_DEBUG is active, this should be deactive to save power for actual deployment of the terminal.
+#endif
+
 #endif /* __PROJECT_CONFIG_H__ */
