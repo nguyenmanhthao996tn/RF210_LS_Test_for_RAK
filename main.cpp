@@ -264,7 +264,7 @@ void lora_send_space_uplink(uint8_t *payload, uint8_t payload_len)
 
 void sat_predictor_init(void)
 {
-#warning No implement yet
+  // Do nothing here
 }
 
 void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_duration_s, uint32_t gnss_latitude, uint32_t gnss_longtitude)
@@ -276,7 +276,7 @@ void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_
 
   predictor.init(satname, tle_line1, tle_line2);
 
-  passinfo overpass;                            // structure to store overpass info
+  passinfo overpass;                                           // structure to store overpass info
   predictor.initpredpoint((unsigned long)rtc.getEpoch(), 0.0); // finds the startpoint
 
   bool good_pass_found = false;
@@ -294,7 +294,6 @@ void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_
     }
   }
 
-  log("Predict next satellite pass\n");
   if (good_pass_found)
   {
     uint32_t next_satellite_pass_start = getUnixFromJulian(overpass.jdstart);
@@ -303,16 +302,11 @@ void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_
     // Add 5 minutes margin
     *pass_start_timestamp = next_satellite_pass_start - (5 * 60);
     *pass_duration_s = (next_satellite_pass_stop - next_satellite_pass_start) + (10 * 60);
-
-    log("A good pass found at");
-    log("\n\tStart: %ld\n\tStop: %ld\n\tMax. Elavation:  %f\n", next_satellite_pass_start, next_satellite_pass_stop, overpass.maxelevation);
   }
   else
   {
     *pass_start_timestamp = 0;
     *pass_duration_s = 0;
-
-    log("Pass NOT found\n");
   }
 }
 
