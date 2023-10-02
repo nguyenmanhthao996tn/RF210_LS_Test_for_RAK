@@ -64,7 +64,25 @@ void serial_init(void);
   Serial.print(log_buffer); \
  }
  #else
- log( ... )
+ #define log( ... )
+ #endif
+
+ /**
+ * @brief Print log message for debugging. Printing
+ * to log could be disabled by undefined SERIAL_LOG_ENABLE.
+ * 
+ * @param msg Your message to print
+ */
+#if defined(SERIAL_LOG_ENABLE) && defined(SERIAL_LOG_DEBUG_ENABLE)
+#define log_debug( ... ) { \
+  char log_buffer[128]; \
+  memset(log_buffer, 0, 128); \
+  snprintf(log_buffer, 128, __VA_ARGS__); \
+  Serial.print("[DEBUG] "); \
+  Serial.print(log_buffer); \
+ }
+ #else
+ #define log_debug( ... )
  #endif
 
 /*********** Others ***********/

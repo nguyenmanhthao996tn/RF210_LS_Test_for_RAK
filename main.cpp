@@ -39,6 +39,12 @@ void system_init(void)
 void system_sleep(uint32_t sleep_duration_s)
 {
 #warning No implement yet
+  log_debug("system_sleep(%u)\n", sleep_duration_s);
+
+#if !defined(SYSTEM_SLEEP_DEBUG)
+#else
+  delay(sleep_duration_s * 1000);
+#endif
 }
 
 void gnss_init(void)
@@ -72,6 +78,8 @@ void gnss_init(void)
 
 void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t *gnss_time)
 {
+  log_debug("gnss_get_data(0x%x, 0x%x, 0x%x)\n", gnss_latitude, gnss_longtitude, gnss_time);
+
 #if !defined(GPS_MOCK_COORDINATE_ENABLE) // Normal operation
 #warning Need testing to verify all functionalities
   digitalWrite(GPS_ENABLE_PIN, HIGH);
@@ -149,6 +157,8 @@ static void sw_ctrl_set_mode_rx(void)
 
 void lora_init(void)
 {
+  log_debug("lora_init()\n");
+
   rft_status_t status;
 
   pinMode(SW_VCTL1_PIN, OUTPUT);
@@ -157,12 +167,15 @@ void lora_init(void)
   status = subghz_inst.init(RFT_REGION_EU863_870);
   if (status != RFT_STATUS_OK)
   {
+    log_debug("LoRa init FAIL | Status = %s\n", rft_status_to_str(status));
     return;
   }
 }
 
 uint8_t build_payload(uint8_t *buffer, bool send_to_space, uint32_t gps_lattitude, uint32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update)
 {
+  log_debug("build_payload(%x, %s, %u, %u, %u, %u, %u)", buffer, (send_to_space ? "true" : "false"), gps_lattitude, gps_longtitude, next_pass_start, next_pass_duration, next_gps_update);
+
   if (buffer == NULL)
     return 0;
 
@@ -204,11 +217,20 @@ uint8_t build_payload(uint8_t *buffer, bool send_to_space, uint32_t gps_lattitud
   buffer[23] = (next_gps_update >> 8) & 0xFF;
   buffer[24] = next_gps_update & 0xFF;
 
+  log_debug("Payload: ");
+  for (uint8_t i = 0; i < 25; i++)
+  {
+    log_debug(" 0x%.2x", buffer[i]);
+  }
+  log_debug("\n");
+
   return 25;
 }
 
 void lora_send_terrestrial_status_uplink(uint8_t *payload, uint8_t payload_len)
 {
+  log_debug("lora_send_terrestrial_status_uplink(0x%x, %u)\n", payload, payload_len);
+
   // Set parameters
   // LoRaWAN parameters
   subghz_inst.set_lorawan_activation_type(RFT_LORAWAN_ACTIVATION_TYPE_ABP);
@@ -231,12 +253,15 @@ void lora_send_terrestrial_status_uplink(uint8_t *payload, uint8_t payload_len)
   rft_status_t status = subghz_inst.send_uplink((byte *)payload, payload_len, sw_ctrl_set_mode_tx, sw_ctrl_set_mode_rx);
   if (status != RFT_STATUS_OK)
   {
+    log_debug("LoRa send_uplink FAIL | Status = %s\n", rft_status_to_str(status));
     return;
   }
 }
 
 void lora_send_space_uplink(uint8_t *payload, uint8_t payload_len)
 {
+  log_debug("lora_send_space_uplink(0x%x, %u)\n", payload, payload_len);
+
   // Set parameters
   // LoRaWAN parameters
   subghz_inst.set_lorawan_activation_type(RFT_LORAWAN_ACTIVATION_TYPE_ABP);
@@ -258,17 +283,22 @@ void lora_send_space_uplink(uint8_t *payload, uint8_t payload_len)
   rft_status_t status = subghz_inst.send_lorawan_over_lrfhss((byte *)payload, payload_len, sw_ctrl_set_mode_tx);
   if (status != RFT_STATUS_OK)
   {
+    log_debug("LoRa send_lorawan_over_lrfhss FAIL | Status = %s\n", rft_status_to_str(status));
     return;
   }
 }
 
 void sat_predictor_init(void)
 {
+  log_debug("sat_predictor_init()\n");
+
   // Do nothing here
 }
 
 void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_duration_s, uint32_t gnss_latitude, uint32_t gnss_longtitude)
 {
+  log_debug("sat_predictor_get_next_pass(%x, %x, %u, %u)\n", pass_start_timestamp, pass_duration_s, gnss_latitude, gnss_longtitude);
+
   double lat = (double)(gnss_latitude / 1.0e6);
   double lon = (double)(gnss_longtitude / 1.0e6);
   double alt = 0;
@@ -299,12 +329,15 @@ void sat_predictor_get_next_pass(uint32_t *pass_start_timestamp, uint32_t *pass_
     uint32_t next_satellite_pass_start = getUnixFromJulian(overpass.jdstart);
     uint32_t next_satellite_pass_stop = getUnixFromJulian(overpass.jdstop);
 
+    log_debug("Found a good satellite pass start\n\tfrom: %u\n\tto: %u\n\twith Max Elev.:%s\n", next_satellite_pass_start, next_satellite_pass_stop, String(overpass.maxelevation));
+
     // Add 5 minutes margin
     *pass_start_timestamp = next_satellite_pass_start - (5 * 60);
     *pass_duration_s = (next_satellite_pass_stop - next_satellite_pass_start) + (10 * 60);
   }
   else
   {
+    log_debug("Pass not found");
     *pass_start_timestamp = 0;
     *pass_duration_s = 0;
   }
@@ -330,6 +363,8 @@ void gpio_init(void)
 
 void led_blink(uint8_t num_of_blinks, uint32_t led_on_duration_ms, uint32_t led_off_duration_ms)
 {
+  log_debug("led_blink(%u, %u, %u)\n", num_of_blinks, led_on_duration_ms, led_off_duration_ms);
+
   for (; num_of_blinks > 0; num_of_blinks--)
   {
     led_on();
@@ -342,16 +377,20 @@ void led_blink(uint8_t num_of_blinks, uint32_t led_on_duration_ms, uint32_t led_
 
 void led_on(void)
 {
+  log_debug("led_on()\n");
   digitalWrite(LED_PIN, HIGH);
 }
 
 void led_off(void)
 {
+  log_debug("led_off()\n");
   digitalWrite(LED_PIN, LOW);
 }
 
 void event_timestamp_calibration(uint32_t *gps_update_timestamp, uint32_t *lora_terrestrial_status_uplink_timestamp, uint32_t lora_space_pass_start_timestamp, uint32_t lora_space_pass_duration_s)
 {
+  log_debug("event_timestamp_calibration(%x, %x, %u, %u)\n", gps_update_timestamp, lora_terrestrial_status_uplink_timestamp, lora_space_pass_start_timestamp, lora_space_pass_duration_s);
+
 #define SAT_PASS_GUARD_TIME (15 * 60) // No GPS Update or Status uplink in a satellite pass or 15 mins before it
 
   const uint32_t start = lora_space_pass_start_timestamp - SAT_PASS_GUARD_TIME;
@@ -370,6 +409,8 @@ void event_timestamp_calibration(uint32_t *gps_update_timestamp, uint32_t *lora_
 
 uint32_t smallest(uint32_t val1, uint32_t val2, uint32_t val3)
 {
+  log_debug("smallest(%u, %u, %u)", val1, val2, val3);
+
   uint32_t smallest_value = val1;
 
   if (val2 < smallest_value)
