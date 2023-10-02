@@ -1,5 +1,10 @@
 # RF210_LS_Test_for_RAK
 
+The sketch example  shows how to communicate with a terrestrial gateway and Lacuna satellite.
+ABP activation is used for both terrestrial and space communication.
+For testing simplicity, two different sets of credentials (dev address and keys) are used for terrestrial and space communication respectively.
+
+
 # Board Manager
 
 Use ArduinoCore STM32 -> STM32WL series
@@ -18,4 +23,6 @@ The sketch needs several libraries :
 
 # Configuration files 
 
-tle.h has to be updated with recent TLE from the targetted satellite
+tle.h has to be updated with recent TLE from the targeted satellite
+
+Lorawan credentials are defined in project_config_h for terrestrial and space terminals.
