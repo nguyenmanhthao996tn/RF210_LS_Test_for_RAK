@@ -38,6 +38,6 @@ static uint8_t dev_addr_space[] = {0x26, 0x0B, 0x87, 0x00};
 #define GPS_MOCK_COORDINATE_ENABLE
 #define GPS_MOCK_LAT_VALUE 436152087ul
 #define GPS_MOCK_LON_VALUE 70686221ul
-#define GPS_MOCK_TIME_VALUE 1696192594ul // Sun, 01 Oct 2023 11:44:28 GMT
+#define GPS_MOCK_TIME_VALUE 1696205970ul // Monday, 2 October 2023 00:19:30 GMT
 
 #endif /* __PROJECT_CONFIG_H__ */
