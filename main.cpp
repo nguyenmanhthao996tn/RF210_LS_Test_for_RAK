@@ -2,6 +2,14 @@
 
 HardwareSerial SerialGPS(USART1);
 
+rfthings_sx126x subghz_inst;
+extern uint8_t nwkS_key_terrestrial[];
+extern uint8_t appS_key_terrestrial[];
+extern uint8_t dev_addr_terrestrial[];
+extern uint8_t nwkS_key_space[];
+extern uint8_t appS_key_space[];
+extern uint8_t dev_addr_space[];
+
 void system_sleep(uint32_t sleep_duration_s)
 {
 #warning No implement yet
@@ -61,17 +69,117 @@ void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t 
 
 void lora_init(void)
 {
-#warning No implement yet
+  rft_status_t status;
+
+  pinMode(SW_VCTL1_PIN, OUTPUT);
+  pinMode(SW_VCTL2_PIN, OUTPUT);
+
+  status = subghz_inst.init(RFT_REGION_EU863_870);
+  if (status != RFT_STATUS_OK)
+  {
+    return;
+  }
 }
 
-void lora_send_terrestrial_status_uplink(void)
+uint8_t build_payload(uint8_t *buffer, bool send_to_space, uint32_t gps_lattitude, uint32_t gps_longtitude, uint32_t next_pass_start, uint32_t next_pass_duration, uint32_t next_gps_update)
 {
-#warning No implement yet
+  if (buffer == NULL)
+    return 0;
+
+  /****** What should we send? ******/
+  // Packet type: 1 = send to space, 0 = send to terrestrial gateway
+  buffer[0] = send_to_space ? 1 : 0;
+
+  // Packet build time
+  uint32_t now = rtc.getEpoch();
+  buffer[1] = (now >> 24) & 0xFF;
+  buffer[2] = (now >> 16) & 0xFF;
+  buffer[3] = (now >> 8) & 0xFF;
+  buffer[4] = now & 0xFF;
+
+  // Last coordinates
+  buffer[5] = (gps_lattitude >> 24) & 0xFF;
+  buffer[6] = (gps_lattitude >> 16) & 0xFF;
+  buffer[7] = (gps_lattitude >> 8) & 0xFF;
+  buffer[8] = gps_lattitude & 0xFF;
+  buffer[9] = (gps_lattitude >> 24) & 0xFF;
+  buffer[10] = (gps_lattitude >> 16) & 0xFF;
+  buffer[11] = (gps_lattitude >> 8) & 0xFF;
+  buffer[12] = gps_lattitude & 0xFF;
+
+  // Next satellite pass start & duration
+  buffer[13] = (next_pass_start >> 24) & 0xFF;
+  buffer[14] = (next_pass_start >> 16) & 0xFF;
+  buffer[15] = (next_pass_start >> 8) & 0xFF;
+  buffer[16] = next_pass_start & 0xFF;
+
+  buffer[17] = (next_pass_duration >> 24) & 0xFF;
+  buffer[18] = (next_pass_duration >> 16) & 0xFF;
+  buffer[19] = (next_pass_duration >> 8) & 0xFF;
+  buffer[20] = next_pass_duration & 0xFF;
+
+  // Next GPS Update timestamp
+  buffer[21] = (next_gps_update >> 24) & 0xFF;
+  buffer[22] = (next_gps_update >> 16) & 0xFF;
+  buffer[23] = (next_gps_update >> 8) & 0xFF;
+  buffer[24] = next_gps_update & 0xFF;
+
+  return 25;
 }
 
-void lora_send_space_uplink(void)
+void lora_send_terrestrial_status_uplink(uint8_t *payload, uint8_t payload_len)
 {
-#warning No implement yet
+  // Set parameters
+  // LoRaWAN parameters
+  subghz_inst.set_lorawan_activation_type(RFT_LORAWAN_ACTIVATION_TYPE_ABP);
+  subghz_inst.set_application_session_key(appS_key_terrestrial);
+  subghz_inst.set_network_session_key(nwkS_key_terrestrial);
+  subghz_inst.set_device_address(dev_addr_terrestrial);
+
+  subghz_inst.set_tx_port(1);
+  subghz_inst.set_rx1_delay(1000);
+
+  // LoRa parameters
+  subghz_inst.set_tx_power(22);
+  subghz_inst.set_frequency(868100000);
+  subghz_inst.set_spreading_factor(RFT_LORA_SPREADING_FACTOR_9);
+  subghz_inst.set_bandwidth(RFT_LORA_BANDWIDTH_125KHZ);
+  subghz_inst.set_coding_rate(RFT_LORA_CODING_RATE_4_6);
+  subghz_inst.set_syncword(RFT_LORA_SYNCWORD_PUBLIC);
+
+  // Send packet
+  rft_status_t status = subghz_inst.send_uplink((byte *)payload, payload_len, sw_ctrl_set_mode_tx, sw_ctrl_set_mode_rx);
+  if (status != RFT_STATUS_OK)
+  {
+    return;
+  }
+}
+
+void lora_send_space_uplink(uint8_t *payload, uint8_t payload_len)
+{
+  // Set parameters
+  // LoRaWAN parameters
+  subghz_inst.set_lorawan_activation_type(RFT_LORAWAN_ACTIVATION_TYPE_ABP);
+  subghz_inst.set_application_session_key(appS_key_space);
+  subghz_inst.set_network_session_key(nwkS_key_space);
+  subghz_inst.set_device_address(dev_addr_space);
+
+  // Config LR-FHSS parameter
+  subghz_inst.set_lrfhss_codingRate(RFT_LRFHSS_CODING_RATE_1_3);
+  subghz_inst.set_lrfhss_bandwidth(RFT_LRFHSS_BANDWIDTH_136_7_KHZ);
+  subghz_inst.set_lrfhss_grid(RFT_LRFHSS_GRID_3_9_KHZ);
+  subghz_inst.set_lrfhss_hopping(true);
+  subghz_inst.set_lrfhss_nbSync(4);
+  subghz_inst.set_lrfhss_frequency(868200000);
+  subghz_inst.set_lrfhss_power(22);
+  subghz_inst.set_lrfhss_syncword(0x2C0F7995);
+
+  // Send packet
+  rft_status_t status = subghz_inst.send_lorawan_over_lrfhss((byte *)payload, payload_len, sw_ctrl_set_mode_tx);
+  if (status != RFT_STATUS_OK)
+  {
+    return;
+  }
 }
 
 void sat_predictor_init(void)

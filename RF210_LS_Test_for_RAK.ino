@@ -33,7 +33,11 @@ void setup(void)
 
   // Send stutus packet
   led_blink(2);
-  lora_send_terrestrial_status_uplink();
+  uint8_t payload[32];
+  uint8_t payload_len = build_payload(payload, false, gnss_latitude, gnss_longtitude, lora_space_pass_start_timestamp, lora_space_pass_duration_s, gps_update_timestamp);
+  lora_send_terrestrial_status_uplink(payload, payload_len);
+  lora_send_terrestrial_status_uplink(payload, payload_len);
+  log("Send terrestrial status uplink DONE\n");
 
   // Turn on the LED 1 second to indicate initialization DONE
   led_on();
@@ -55,7 +59,9 @@ void loop(void)
     {
       // Send
       led_blink(2);
-      lora_send_space_uplink();
+      uint8_t payload[32];
+      uint8_t payload_len = build_payload(payload, true, gnss_latitude, gnss_longtitude, lora_space_pass_start_timestamp, lora_space_pass_duration_s, gps_update_timestamp);
+      lora_send_space_uplink(payload, payload_len);
 
       // Delay
       system_sleep(LORA_SPACE_DELAY_BETWEEN_PACKET_S);
@@ -78,7 +84,9 @@ void loop(void)
   {
     // Send status uplink
     led_blink(3);
-    lora_send_terrestrial_status_uplink();
+    uint8_t payload[32];
+    uint8_t payload_len = build_payload(payload, false, gnss_latitude, gnss_longtitude, lora_space_pass_start_timestamp, lora_space_pass_duration_s, gps_update_timestamp);
+    lora_send_terrestrial_status_uplink(payload, payload_len);
 
     // Calculate the next timestamp
     lora_terrestrial_status_uplink_timestamp += LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S;
