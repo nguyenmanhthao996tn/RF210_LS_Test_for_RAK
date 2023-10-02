@@ -272,9 +272,9 @@ void lora_send_terrestrial_status_uplink(uint8_t *payload, uint8_t payload_len)
 
   // LoRa parameters
   subghz_inst.set_tx_power(22);
-  subghz_inst.set_frequency(868100000);
-  subghz_inst.set_spreading_factor(RFT_LORA_SPREADING_FACTOR_9);
-  subghz_inst.set_bandwidth(RFT_LORA_BANDWIDTH_125KHZ);
+  subghz_inst.set_frequency(LORA_TERRESTRIAL_FREQUENCY_HZ);
+  subghz_inst.set_spreading_factor(LORA_TERRESTRIAL_SPREADING_FACTOR);
+  subghz_inst.set_bandwidth(LORA_TERRESTRIAL_BANDWIDTH);
   subghz_inst.set_coding_rate(RFT_LORA_CODING_RATE_4_6);
   subghz_inst.set_syncword(RFT_LORA_SYNCWORD_PUBLIC);
 

@@ -3,10 +3,14 @@
 
 #include <Arduino.h>
 
-#define SERIAL_LOG_ENABLE // Comment this to save power for actual deploy of the terminal
+// #define SERIAL_LOG_ENABLE // Comment this to save power for actual deploy of the terminal
 
-#define LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S (6000) // 30 Seconds
-#define GNSS_DATA_UPDATE_INTERVAL_S (24 * 60 * 60)       // 1 Day
+#define LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S (30 * 60) // 30 minutes
+#define LORA_TERRESTRIAL_FREQUENCY_HZ 868100000
+#define LORA_TERRESTRIAL_SPREADING_FACTOR RFT_LORA_SPREADING_FACTOR_9
+#define LORA_TERRESTRIAL_BANDWIDTH RFT_LORA_BANDWIDTH_125KHZ
+
+#define GNSS_DATA_UPDATE_INTERVAL_S (24 * 60 * 60) // 1 Day
 
 #define MIN_PASS_ELAVATION 30 // Send to satellite pass with elavation > 30 degrees
 
@@ -40,10 +44,10 @@ static uint8_t dev_addr_space[] = {0x26, 0x0B, 0x87, 0x00};
 #define GPS_MOCK_COORDINATE_ENABLE
 #define GPS_MOCK_LAT_VALUE 43615208ul
 #define GPS_MOCK_LON_VALUE 7068622ul
-#define GPS_MOCK_TIME_VALUE 1696236203ul // Monday, 2 October 2023 00:19:30 GMT
+#define GPS_MOCK_TIME_VALUE 1696259693ul // Monday, 2 October 2023 15:14:53 GMT
 
 /* DEBUGGING */
-#define SERIAL_LOG_DEBUG_ENABLE // Uncomment this for printing debug log. Caution: This is in effect only if SERIAL_LOG_ENABLE is available.
+// #define SERIAL_LOG_DEBUG_ENABLE // Uncomment this for printing debug log. Caution: This is in effect only if SERIAL_LOG_ENABLE is available.
 // #define SYSTEM_SLEEP_DEBUG // Uncomment this for using delay instead of sleep
 
 #if defined(SERIAL_LOG_DEBUG_ENABLE)
