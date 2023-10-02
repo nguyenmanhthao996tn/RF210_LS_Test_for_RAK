@@ -6,7 +6,7 @@
 #define SERIAL_LOG_ENABLE // Comment this to save power for actual deploy of the terminal
 
 #define LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S (30) // 30 Seconds
-#define GNSS_DATA_UPDATE_INTERVAL_S (24*60*60) // 1 Day
+#define GNSS_DATA_UPDATE_INTERVAL_S (24 * 60 * 60)     // 1 Day
 
 #define LORA_SPACE_DELAY_BETWEEN_PACKET_S (15) // 15 Seconds
 

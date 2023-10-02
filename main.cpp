@@ -1,6 +1,10 @@
 #include "main.h"
 
 HardwareSerial SerialGPS(USART1);
+STM32RTC &rtc = STM32RTC::getInstance();
+
+char nmeaBuffer[100];
+MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 
 rfthings_sx126x subghz_inst;
 extern uint8_t nwkS_key_terrestrial[];
@@ -9,6 +13,21 @@ extern uint8_t dev_addr_terrestrial[];
 extern uint8_t nwkS_key_space[];
 extern uint8_t appS_key_space[];
 extern uint8_t dev_addr_space[];
+
+static unsigned long unixTimestamp(int year, int month, int day, int hour, int min, int sec)
+{
+  const short days_since_beginning_of_year[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+  int leap_years = ((year - 1) - 1968) / 4 - ((year - 1) - 1900) / 100 + ((year - 1) - 1600) / 400;
+  long days_since_1970 = (year - 1970) * 365 + leap_years + days_since_beginning_of_year[month - 1] + day - 1;
+  if ((month > 2) && (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)))
+    days_since_1970 += 1; /* +leap day, if year is a leap year */
+  return sec + 60 * (min + 60 * (hour + 24 * days_since_1970));
+}
+
+void system_init(void)
+{
+  rtc.begin();
+}
 
 void system_sleep(uint32_t sleep_duration_s)
 {
@@ -47,17 +66,42 @@ void gnss_init(void)
 void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t *gnss_time)
 {
 #if !defined(GPS_MOCK_COORDINATE_ENABLE) // Normal operation
-#error No implement yet
+#warning Need testing to verify all functionalities
   digitalWrite(GPS_ENABLE_PIN, HIGH);
 
-  delay(500);
+  delay(1000);
 
   SerialGPS.flush();
+  nmea.clear();
 
-  // TODO: Do the reading
-  *gnss_latitude = 0;
-  *gnss_longtitude = 0;
-  *gnss_time = 0;
+  char received_char;
+  uint32_t last_blink = millis();
+  for (;;)
+  {
+    // Get the character from GPS Serial & process it
+    if (SerialGPS.available())
+    {
+      received_char = SerialGPS.read();
+      nmea.process(received_char);
+    }
+
+    // Check read exit condition
+    if (nmea.isValid() && (nmea.getNumSatellites() > 4))
+    {
+      break;
+    }
+
+    // Blink LED every second
+    if (millis() - last_blink > 1000)
+    {
+      last_blink = millis();
+      led_blink(1);
+    }
+  }
+
+  *gnss_latitude = nmea.getLatitude();
+  *gnss_longtitude = nmea.getLongitude();
+  *gnss_time = unixTimestamp(nmea.getYear(), nmea.getMonth(), nmea.getDay(), nmea.getHour(), nmea.getMinute(), nmea.getSecond());
 
   digitalWrite(GPS_ENABLE_PIN, HIGH);
 #else // Mock GPS coordinates
@@ -65,6 +109,11 @@ void gnss_get_data(uint32_t *gnss_latitude, uint32_t *gnss_longtitude, uint32_t 
   *gnss_longtitude = GPS_MOCK_LON_VALUE;
   *gnss_time = GPS_MOCK_TIME_VALUE;
 #endif
+
+  // Update time to RTC module
+  rtc.setEpoch((time_t)(*gnss_time));
+  // rtc.setTime(21, 32, 05); // Hour, Min, Sec
+  // rtc.setDate(01, 10, 23); // Day, Month, Year (actual year - 2000)
 }
 
 static void sw_ctrl_set_mode(bool mode_tx)

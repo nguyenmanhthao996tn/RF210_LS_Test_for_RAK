@@ -14,10 +14,12 @@ uint32_t gnss_latitude = 0;
 uint32_t gnss_longtitude = 0;
 uint32_t gnss_time = 0;
 
+extern STM32RTC &rtc;
 
 /****** FUNCTIONS: Main ******/
 void setup(void)
 {
+  system_init();
   gpio_init();
   serial_init();
   lora_init();
@@ -28,8 +30,18 @@ void setup(void)
 
   // Get GPS Data
   gnss_get_data(&gnss_latitude, &gnss_longtitude, &gnss_time);
+  gps_update_timestamp = rtc.getEpoch() + GNSS_DATA_UPDATE_INTERVAL_S;
   log("Get GPS Data DONE\n");
-  log("Lat: %d\nLon: %d\nGPS Time: %d\n", gnss_latitude, gnss_longtitude, gnss_time);
+  log("\tLat: %d\n\tLon: %d\n\tGPS Time: %d\n", gnss_latitude, gnss_longtitude, gnss_time);
+  log("\tLong date format: %02d/%02d/%02d ", rtc.getDay(), rtc.getMonth(), rtc.getYear());
+  log("%02d:%02d:%02d.%03d\n", rtc.getHours(), rtc.getMinutes(), rtc.getSeconds(), rtc.getSubSeconds());
+  log("\tNext GPS update: %d\n", gps_update_timestamp);
+
+  // Calculate the next pass
+  sat_predictor_get_next_pass(&lora_space_pass_start_timestamp, &lora_space_pass_duration_s);
+  event_timestamp_calibration(&gps_update_timestamp, &lora_terrestrial_status_uplink_timestamp, lora_space_pass_start_timestamp, lora_space_pass_duration_s);
+  log("Predict the next satellite pass DONE\n");
+  log("\tPass start: %d\n\tPass duration:%d\n", lora_space_pass_start_timestamp, lora_space_pass_duration_s);
 
   // Send stutus packet
   led_blink(2);
@@ -46,8 +58,8 @@ void setup(void)
 
   current_timestamp = millis();
 
-  // DEBUG
-  while (1);
+  while (1)
+    ; // DEBUG: We stop the debugging here
 }
 
 void loop(void)
