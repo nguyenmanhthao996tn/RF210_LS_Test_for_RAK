@@ -67,6 +67,20 @@ For actual deployment of the terminal/device, following debugging configurations
 
 This example is design for The RAK3172 module integrated on RFThings RF210 to work independently. The integrated ESP32-C3 should be also put into sleep mode to maximize the device's battery lifetime.
 
+# Payload format
+
+The uplink payload format remains the same for terrestrial and space communication. Payload's length should be always 25 bytes.
+
+|   **Payload**  |              **Description**              |                      **Value**                      |
+|:--------------:|:-----------------------------------------:|:---------------------------------------------------:|
+| payload[0]     | Is this packet sent to satellite?         | **1**: Send to satellite<br />**0**: Send to terrestrial gateway |
+| payload[4:1]   | Packet build epoch                        | N/A                                                 |
+| payload[8:5]   | Device last latitude                      | N/A                                                 |
+| payload[12:9]  | Device last longtitude                    | N/A                                                 |
+| payload[16:13] | Next satellite pass start epoch           | N/A                                                 |
+| payload[20:17] | Next satellite pass duration in second(s) | N/A                                                 |
+| payload[24:21] | Next GPS update epoch                     | N/A                                                 |
+
 # Credits
 
 Communication with :satellite: satellites :satellite: from small terminal/device is challenging but not too hard. Stick with us at [RFThings Support eMail](mailto:support@rfthings.com.vn?subject=Question%20of%20RF210_LS_Test_for_RAK) in this adventure and we can make it there.
