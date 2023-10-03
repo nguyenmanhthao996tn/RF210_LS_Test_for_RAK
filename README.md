@@ -69,17 +69,17 @@ This example is design for The RAK3172 module integrated on RFThings RF210 to wo
 
 # Payload format
 
-The uplink payload format remains the same for terrestrial and space communication. Payload's length should be always 25 bytes.
+The uplink payload format remains the same for terrestrial and space communication. Payload's length should be always **25 bytes**.
 
 |   **Payload**  |              **Description**              |                      **Value**                      |
 |:--------------:|:-----------------------------------------:|:---------------------------------------------------:|
-| payload[0]     | Is this packet sent to satellite?         | **1**: Send to satellite<br />**0**: Send to terrestrial gateway |
-| payload[4:1]   | Packet build epoch                        | N/A                                                 |
-| payload[8:5]   | Device last latitude                      | N/A                                                 |
-| payload[12:9]  | Device last longtitude                    | N/A                                                 |
-| payload[16:13] | Next satellite pass start epoch           | N/A                                                 |
-| payload[20:17] | Next satellite pass duration in second(s) | N/A                                                 |
-| payload[24:21] | Next GPS update epoch                     | N/A                                                 |
+| payload[**0**]     | Is this packet sent to satellite?         | **1**: Send to satellite<br />**0**: Send to terrestrial gateway |
+| payload[**4:1**]   | Packet build epoch                        | N/A                                                 |
+| payload[**8:5**]   | Device last latitude                      | N/A                                                 |
+| payload[**12:9**]  | Device last longtitude                    | N/A                                                 |
+| payload[**16:13**] | Next satellite pass start epoch           | N/A                                                 |
+| payload[**20:17**] | Next satellite pass duration in second(s) | N/A                                                 |
+| payload[**24:21**] | Next GPS update epoch                     | N/A                                                 |
 
 # Credits
 
