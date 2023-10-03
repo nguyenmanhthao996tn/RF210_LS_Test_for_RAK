@@ -47,6 +47,7 @@ void setup(void)
   uint8_t payload[32];
   uint8_t payload_len = build_payload(payload, false, gnss_latitude, gnss_longtitude, lora_space_pass_start_timestamp, lora_space_pass_duration_s, gps_update_timestamp);
   lora_send_terrestrial_status_uplink(payload, payload_len);
+  payload_len = build_payload(payload, false, gnss_latitude, gnss_longtitude, lora_space_pass_start_timestamp, lora_space_pass_duration_s, gps_update_timestamp);
   lora_send_terrestrial_status_uplink(payload, payload_len);
   lora_terrestrial_status_uplink_timestamp = (unsigned long)rtc.getEpoch() + LORA_TERRESTRIAL_STATUS_UPLINK_INTERVAL_S;
   event_timestamp_calibration(&gps_update_timestamp, &lora_terrestrial_status_uplink_timestamp, lora_space_pass_start_timestamp, lora_space_pass_duration_s);
