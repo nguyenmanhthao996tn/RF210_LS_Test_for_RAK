@@ -12,7 +12,7 @@ To compile the example, select board manager as followings in ArduinoIDE
 
 ![board_manager.png](docs/board_manager.png)
 
-# Librairies
+# Libraries
 
 The sketch required following libraries. Make sure you have them installed:
 
