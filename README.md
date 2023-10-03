@@ -69,7 +69,7 @@ This example is design for The RAK3172 module integrated on RFThings RF210 to wo
 
 # Payload format
 
-The uplink payload format remains the same for terrestrial and space communication. Payload's length should be always **25 bytes**.
+The uplink payload format remains the same for terrestrial and space communication. Payload's length should be always **25 bytes**. An example of packet decoder in Javascript can be find in [docs/packet_formatter_ttn.js](./docs/packet_formatter_ttn.js)
 
 |   **Payload**  |              **Description**              |                      **Value**                      |
 |:--------------:|:-----------------------------------------:|:---------------------------------------------------:|
