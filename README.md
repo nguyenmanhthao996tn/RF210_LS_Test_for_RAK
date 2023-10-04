@@ -10,7 +10,7 @@ The example used [stm32duino/Arduino_Core_STM32](https://github.com/stm32duino/A
 
 To compile the example, select board manager as followings in ArduinoIDE
 
-![board_manager.png](docs/board_manager.png)
+<img src="docs/board_manager.png" alt="docs/board_manager.png" width="400"/>
 
 # Libraries
 
@@ -80,6 +80,30 @@ The uplink payload format remains the same for terrestrial and space communicati
 | payload[**16:13**] | Next satellite pass start epoch           | N/A                                                 |
 | payload[**20:17**] | Next satellite pass duration in second(s) | N/A                                                 |
 | payload[**24:21**] | Next GPS update epoch                     | N/A                                                 |
+
+# FAQ
+
+### Q1: I can compile but cannot upload. What happened?
+
+If you get the error as the following image, make sure your RF210 board has **Bootloader mode** activated and hit the upload again. To trigger the **Bootloader mode**, hold the **B_RAK** button and press **R_RAK** button.
+
+<img src="docs/q1_upload_issue.png" alt="docs/q1_upload_issue.png" width="600"/>
+
+### Q2: How can I get the AT Command firmware back?
+
+In order to get the space communicating modulation (LR-FHSS), this demo sketch is using a different firmware/core which is from [Arduino_Core_STM32](https://github.com/stm32duino/Arduino_Core_STM32). To get the AT Command firmware back, you need the firmware from RAKwireless. Follow the instruction here: [XuanMinh201/RF210](https://github.com/XuanMinh201/RF210/)
+
+<p style="color:red;"><i>At RFThings, we are developing firmware merging these two feature. It's coming soon ...</i></p>
+
+### Q3: How about power consumption?
+
+With the LoRaSpaceLib-STM32WL version 1.0.1, I can reached **~284uA** (580nW) when the terminal is inactive.
+
+The below image is the power consumption of first 15 seconds after startup.
+
+<img src="docs/q3_power_consumption.png" alt="docs/q3_power_consumption.png" width="1024"/>
+
+For detailed power consumption in different stages of the firmware, I left my OTII project file in the [docs/q3_power_consumption.otii](docs/q3_power_consumption.otii) folder.
 
 # Credits
 
