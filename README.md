@@ -80,6 +80,7 @@ The uplink payload format remains the same for terrestrial and space communicati
 | payload[**16:13**] | Next satellite pass start epoch           | N/A                                                 |
 | payload[**20:17**] | Next satellite pass duration in second(s) | N/A                                                 |
 | payload[**24:21**] | Next GPS update epoch                     | N/A                                                 |
+| payload[**26:25**] | Battery voltage ADC                       | N/A                                                 |
 
 # FAQ
 
