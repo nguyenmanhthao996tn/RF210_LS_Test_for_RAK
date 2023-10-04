@@ -1,5 +1,5 @@
 function decodeUplink(input) {
-  if (input.bytes.length == 25) {
+  if (input.bytes.length == 27) {
     var packet_type = (input.bytes[0] === 1) ? 'satellite' : 'terrestrial';
 
     var send_epoch = (input.bytes[4] << 0) | (input.bytes[3] << 8) | (input.bytes[2] << 16) | (input.bytes[1] << 24);
@@ -15,6 +15,10 @@ function decodeUplink(input) {
 
     var next_gnss_update_epoch = (input.bytes[24] << 0) | (input.bytes[23] << 8) | (input.bytes[22] << 16) | (input.bytes[21] << 24);
 
+    var battery_voltage = (input.bytes[26] << 0) | (input.bytes[25] << 8);
+    battery_voltage = (battery_voltage / 4095) * 3.3;
+    battery_voltage *= 1.5; // This ratio is on-board voltage divider (R2/R4)
+
     return {
       data: {
         packet_type: packet_type,
@@ -24,6 +28,7 @@ function decodeUplink(input) {
         next_pass_epoch: next_pass_epoch,
         next_pass_duration: next_pass_duration,
         next_gnss_update_epoch: next_gnss_update_epoch,
+        battery_voltage: battery_voltage,
         raw_data: input.bytes
       },
       warnings: [],

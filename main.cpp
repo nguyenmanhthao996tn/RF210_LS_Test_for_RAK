@@ -42,6 +42,8 @@ void system_init(void)
 
   LowPower.begin();
   LowPower.enableWakeupFrom(&__rtc, alarmMatch, NULL);
+
+  analogReadResolution(12);
 }
 
 void system_sleep(uint32_t wakeup_epoch)
@@ -260,7 +262,12 @@ uint8_t build_payload(uint8_t *buffer, bool send_to_space, int32_t gps_lattitude
   buffer[23] = (next_gps_update >> 8) & 0xFF;
   buffer[24] = next_gps_update & 0xFF;
 
-  return 25;
+  // Battery level
+  uint16_t battery_adc_read = analogRead(VBAT_MEASURE_PIN);
+  buffer[25] = (battery_adc_read >> 8) & 0xFF;
+  buffer[26] = battery_adc_read & 0xFF;
+
+  return 27;
 }
 
 void lora_send_terrestrial_status_uplink(uint8_t *payload, uint8_t payload_len)
