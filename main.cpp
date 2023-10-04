@@ -191,6 +191,12 @@ static void sw_ctrl_set_mode_rx(void)
   sw_ctrl_set_mode(false);
 }
 
+static void sw_ctrl_set_mode_off(void)
+{
+  digitalWrite(SW_VCTL1_PIN, LOW);
+  digitalWrite(SW_VCTL2_PIN, LOW);
+}
+
 void lora_init(void)
 {
   log_debug("lora_init()\n");
@@ -199,6 +205,7 @@ void lora_init(void)
 
   pinMode(SW_VCTL1_PIN, OUTPUT);
   pinMode(SW_VCTL2_PIN, OUTPUT);
+  sw_ctrl_set_mode_off();
 
   status = subghz_inst.init(RFT_REGION_EU863_870);
   if (status != RFT_STATUS_OK)
@@ -280,6 +287,7 @@ void lora_send_terrestrial_status_uplink(uint8_t *payload, uint8_t payload_len)
 
   // Send packet
   rft_status_t status = subghz_inst.send_uplink((byte *)payload, payload_len, sw_ctrl_set_mode_tx, sw_ctrl_set_mode_rx);
+  sw_ctrl_set_mode_off();
   if (status != RFT_STATUS_OK)
   {
     log_debug("LoRa send_uplink FAIL | Status = %s\n", rft_status_to_str(status));
@@ -323,6 +331,7 @@ void lora_send_space_uplink(uint8_t *payload, uint8_t payload_len)
 
   // Send packet
   rft_status_t status = subghz_inst.send_lorawan_over_lrfhss((byte *)payload, payload_len, sw_ctrl_set_mode_tx);
+  sw_ctrl_set_mode_off();
   if (status != RFT_STATUS_OK)
   {
     log_debug("LoRa send_lorawan_over_lrfhss FAIL | Status = %s\n", rft_status_to_str(status));
