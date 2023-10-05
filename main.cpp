@@ -154,7 +154,7 @@ void gnss_get_data(int32_t *gnss_latitude, int32_t *gnss_longtitude, uint32_t *g
     if (millis() - last_blink > 1000)
     {
       last_blink = millis();
-      led_blink(1);
+      led_blink((valid_time == 0) ? 1 : 2);
     }
   }
 
