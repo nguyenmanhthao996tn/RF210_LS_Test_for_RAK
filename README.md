@@ -33,9 +33,10 @@ TLE data in ```tle.h``` file has to be updated with recent TLE from the targeted
 
 TLE data & other information could be find by contacting Satellite provider or the following table:
 
-| **Satellite** | **Norad ID** |                 **TLE & Satellite info**                 |
+| **Satellite** | **Norad ID** |         **TLE & Satellite info**        |
 |:-------------:|:------------:|:---------------------------------------:|
-|  LACUNASAT-2B |     47948    | https://www.n2yo.com/satellite/?s=47948 |
+|      LS2B     |     47948    | https://www.n2yo.com/satellite/?s=47948 |
+|      LS2E     |     48924    | https://www.n2yo.com/satellite/?s=48924 |
 |     _..._     |     _..._    |       _(More satellite is coming)_      |
 
 # Configuration files
