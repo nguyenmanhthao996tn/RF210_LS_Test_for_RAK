@@ -36,6 +36,8 @@ static uint8_t dev_addr_space[] = {0x26, 0x0B, 0x87, 0x00};
 #define LOG_TX_PIN PA2
 #define LOG_RX_PIN PA3
 
+#define VBAT_MEASURE_PIN PA15
+
 /* INSIDE RAK3172 GPIO DEFINE */
 #define SW_VCTL1_PIN PB8
 #define SW_VCTL2_PIN PC13
