@@ -129,6 +129,8 @@ void gnss_get_data(int32_t *gnss_latitude, int32_t *gnss_longtitude, uint32_t *g
 
   char received_char;
   uint32_t last_blink = millis();
+
+  uint32_t valid_time = 0;
   for (;;)
   {
     // Get the character from GPS Serial & process it
@@ -139,7 +141,11 @@ void gnss_get_data(int32_t *gnss_latitude, int32_t *gnss_longtitude, uint32_t *g
     }
 
     // Check read exit condition
-    if (nmea.isValid() && (nmea.getNumSatellites() > 4))
+    if ((valid_time == 0) && nmea.isValid() && (nmea.getNumSatellites() > 4)) // First exit condition: Fix is valid & More than 4 satellites are used
+    {
+      valid_time = millis();
+    }
+    if ((valid_time != 0) && ((millis() - valid_time) > 20000)) // Wait 20 seconds after the first exit condition for data to be stable
     {
       break;
     }
