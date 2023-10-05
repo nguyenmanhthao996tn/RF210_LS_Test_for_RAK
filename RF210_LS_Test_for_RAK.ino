@@ -66,7 +66,7 @@ void loop(void)
   if (current_timestamp > lora_space_pass_start_timestamp)
   {
     // Send uplink while satellite pass still in it's duration
-    while (millis() < (lora_space_pass_start_timestamp + lora_space_pass_duration_s))
+    while ((unsigned long)rtc.getEpoch() < (lora_space_pass_start_timestamp + lora_space_pass_duration_s))
     {
       // Send
       led_blink(2);

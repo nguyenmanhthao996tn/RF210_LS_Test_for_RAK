@@ -314,26 +314,20 @@ void lora_send_space_uplink(uint8_t *payload, uint8_t payload_len)
   subghz_inst.set_device_address(dev_addr_space);
 
   // Config LR-FHSS parameter
-#if 1 // Lacuna Space configuration for AS923
   subghz_inst.set_lrfhss_codingRate(RFT_LRFHSS_CODING_RATE_1_3);
   subghz_inst.set_lrfhss_bandwidth(RFT_LRFHSS_BANDWIDTH_335_9_KHZ);
   subghz_inst.set_lrfhss_grid(RFT_LRFHSS_GRID_3_9_KHZ);
   subghz_inst.set_lrfhss_hopping(true);
   subghz_inst.set_lrfhss_nbSync(4);
-  subghz_inst.set_lrfhss_frequency(924000000);
   subghz_inst.set_lrfhss_power(22);
   subghz_inst.set_lrfhss_syncword(0x2C0F7995);
+  
+#if 1 // Lacuna Space configuration for AS923
+  subghz_inst.set_lrfhss_frequency(924000000);
 #endif
 
 #if 0 // Lacuna Space configuration for EU868
-  subghz_inst.set_lrfhss_codingRate(RFT_LRFHSS_CODING_RATE_1_3);
-  subghz_inst.set_lrfhss_bandwidth(RFT_LRFHSS_BANDWIDTH_136_7_KHZ);
-  subghz_inst.set_lrfhss_grid(RFT_LRFHSS_GRID_3_9_KHZ);
-  subghz_inst.set_lrfhss_hopping(true);
-  subghz_inst.set_lrfhss_nbSync(4);
-  subghz_inst.set_lrfhss_frequency(868200000);
-  subghz_inst.set_lrfhss_power(22);
-  subghz_inst.set_lrfhss_syncword(0x2C0F7995);
+  subghz_inst.set_lrfhss_frequency(862750000);
 #endif
 
   // Send packet
