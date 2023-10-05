@@ -1,10 +1,11 @@
 # :satellite: Satellite communication demo for RFThings RF210
 
 An Arduino sketch example shows how to communicate with a terrestrial gateway and LacunaSpace satellites.
-ABP activation mode is used for both terrestrial and space communication.
-For testing simplicity, two different sets of credentials (dev address and keys) are used for terrestrial and space communication respectively.
 
 <img src="docs/rf210.jpg" alt="docs/rf210.jpg" width="200"/>
+
+ABP activation mode is used for both terrestrial and space communication.
+For testing simplicity, two different sets of credentials (dev address and keys) are used for terrestrial and space communication respectively.
 
 # Board Manager
 
